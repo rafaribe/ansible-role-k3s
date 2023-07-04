@@ -1,5 +1,4 @@
 ---
-
 - name: Ensure that the manifests directory exists
   ansible.builtin.file:
     state: directory
@@ -45,7 +44,10 @@
     - k3s_primary_control_node
     - not ansible_check_mode
     - k3s_server_manifests_urls | length > 0
-
+  environment:
+    http_proxy: "{{ http_proxy }}"
+    https_proxy: "{{ https_proxy }}"
+    no_proxy: "{{ no_proxy }}"
 # https://github.com/k3s-io/k3s/pull/1691
 - name: Ensure static pod manifests are copied to controllers
   ansible.builtin.template:
@@ -68,3 +70,7 @@
   when:
     - k3s_control_node
     - not ansible_check_mode
+  environment:
+    http_proxy: "{{ http_proxy }}"
+    https_proxy: "{{ https_proxy }}"
+    no_proxy: "{{ no_proxy }}"
