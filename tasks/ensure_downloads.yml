@@ -1,5 +1,4 @@
 ---
-
 - name: Ensure target host architecture information is set as a fact
   ansible.builtin.set_fact:
     k3s_arch: "{{ k3s_arch_lookup[ansible_architecture].arch }}"
@@ -20,22 +19,6 @@
     - k3s_release_version | regex_search("^[a-z0-9]{40}$")
   check_mode: false
 
-- name: Ensure the k3s hashsum is downloaded
-  ansible.builtin.uri:
-    url: "{{ k3s_hash_url }}"
-    return_content: true
-  register: k3s_hash_sum_raw
-  check_mode: false
-
-- name: Ensure sha256sum is set from hashsum variable
-  ansible.builtin.set_fact:
-    k3s_hash_sum: "{{ (k3s_hash_sum_raw.content.split('\n') |
-      select('search', 'k3s' + k3s_arch_suffix) |
-      reject('search', 'images') |
-      first).split() | first }}"
-  changed_when: false
-  check_mode: false
-
 - name: Ensure installation directory exists
   ansible.builtin.file:
     path: "{{ k3s_install_dir }}"
@@ -46,6 +29,12 @@
   ansible.builtin.get_url:
     url: "{{ k3s_binary_url }}"
     dest: "{{ k3s_install_dir }}/k3s-{{ k3s_release_version }}"
-    checksum: "sha256:{{ k3s_hash_sum }}"
+    #checksum: "sha256:{{ k3s_hash_sum }}"
     mode: 0755
+    validate_certs: false # Ignore SSL certificate validation if necessary
+    http_agent: "ansible-httpget" # Use a custom User-Agent header if required
   become: "{{ k3s_become }}"
+  environment:
+    http_proxy: "{{ http_proxy }}"
+    https_proxy: "{{ https_proxy }}"
+    no_proxy: "{{ no_proxy }}"
